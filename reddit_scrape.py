@@ -1,0 +1,54 @@
+from datetime import datetime
+from time import sleep
+import requests
+import csv
+
+
+def epoch_time(time: datetime):
+    t0 = datetime(1970,1,1)
+    return (time-t0).total_seconds()
+    
+def scrape(lower_time, upper_time):
+    sleep(.3) # Rate limiting issues
+    url = f"https://api.pushshift.io/reddit/search/submission/?subreddit=uiuc&after={lower_time}&before={upper_time}&sort_type=created_utc&sort=asc&fields=created_utc,link_flair_text,title,full_link&size=100"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        data: list = data["data"] # JSON is formatted wierd....
+        if (len(data) == 100):
+            # That means there might be more posts. Trigger another scrape, append to this scrape (this could happend multiple times recursively)
+            last_timestamp = data[-1]["created_utc"]
+            data += scrape(last_timestamp, upper_time)
+        return data
+    else:
+        print(f"Error: {response.status_code}")
+        if (response.status_code == 429):
+            # We were rate limited :(
+            # Let's just try again
+            return scrape(lower_time, upper_time)
+
+SECONDS_PER_DAY = 86400
+FIRST_DAY = datetime(2020, 8, 1)
+LAST_DAY = datetime(2021, 2, 23)
+DATA_DIR = "./reddit-data"
+
+
+result_lines = []
+# Loop through each day
+prev_timestamp = None
+for timestamp in range(int(epoch_time(FIRST_DAY)), int(epoch_time(LAST_DAY)) + SECONDS_PER_DAY, SECONDS_PER_DAY):
+    if prev_timestamp is None:
+        prev_timestamp = timestamp
+        continue
+    # Get the data
+    data = scrape(prev_timestamp+1, timestamp)
+    total_posts = len(data)
+    covid_posts = sum(1 for post in data if ("link_flair_text" in post and post["link_flair_text"] == "COVID-19"))
+    result_lines.append([prev_timestamp, total_posts, covid_posts])
+    print(result_lines[-1])
+    prev_timestamp = timestamp
+
+# Save to csv
+with open(f"{DATA_DIR}/timestamped_post_count_data.csv", newline='', mode='w') as data_file:
+    writer = csv.writer(data_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    writer.writerows(result_lines)
