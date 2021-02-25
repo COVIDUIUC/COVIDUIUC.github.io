@@ -2,6 +2,7 @@ from datetime import datetime
 from time import sleep
 import requests
 import csv
+import json
 
 
 def epoch_time(time: datetime):
@@ -25,7 +26,7 @@ def scrape(lower_time, upper_time):
         if (response.status_code == 429):
             # We were rate limited :(
             # Let's just try again
-            return scrape(lower_time, upper_time)
+            return scrape(lower_time+1, upper_time)
 
 SECONDS_PER_DAY = 86400
 FIRST_DAY = datetime(2020, 8, 1)
@@ -33,7 +34,9 @@ LAST_DAY = datetime(2021, 2, 23)
 DATA_DIR = "./reddit-data"
 
 
-result_lines = []
+count_result_lines = []
+example_result_lines = []
+example_json_data = {}
 # Loop through each day
 prev_timestamp = None
 for timestamp in range(int(epoch_time(FIRST_DAY)), int(epoch_time(LAST_DAY)) + SECONDS_PER_DAY, SECONDS_PER_DAY):
@@ -42,13 +45,25 @@ for timestamp in range(int(epoch_time(FIRST_DAY)), int(epoch_time(LAST_DAY)) + S
         continue
     # Get the data
     data = scrape(prev_timestamp+1, timestamp)
-    total_posts = len(data)
-    covid_posts = sum(1 for post in data if ("link_flair_text" in post and post["link_flair_text"] == "COVID-19"))
-    result_lines.append([prev_timestamp, total_posts, covid_posts])
-    print(result_lines[-1])
+    filtered_covid_posts = [post for post in data if ("link_flair_text" in post and post["link_flair_text"] == "COVID-19")]
+
+    # Getup to 3 examples
+    num_examples = min(len(filtered_covid_posts), 3)
+    example_json_data[prev_timestamp] = ([[post["title"], post["full_link"]] for post in filtered_covid_posts[:num_examples]])
+    example_result_lines  += ([[prev_timestamp, post["title"], post["full_link"]] for post in filtered_covid_posts[:num_examples]])
+
+    count_result_lines.append([prev_timestamp, len(data), len(filtered_covid_posts)])
+    print(count_result_lines[-1])
     prev_timestamp = timestamp
 
 # Save to csv
-with open(f"{DATA_DIR}/timestamped_post_count_data.csv", newline='', mode='w') as data_file:
+with open(f"{DATA_DIR}/timestamped_post_count_data.csv", newline='', mode='w', encoding="utf-8") as data_file:
     writer = csv.writer(data_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-    writer.writerows(result_lines)
+    writer.writerows(count_result_lines)
+
+with open(f"{DATA_DIR}/timestamped_example_post_data.csv", newline='', mode='w', encoding="utf-8") as data_file:
+    writer = csv.writer(data_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    writer.writerows(example_result_lines)
+
+with open(f"{DATA_DIR}/timestamped_example_post_data.json", newline='', mode='w', encoding="utf-8") as data_file:
+    json.dump(example_json_data, data_file, indent=4)
