@@ -1,18 +1,20 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	
-	<title></title>
-	
-	<link rel="stylesheet" href="assets/styles/main.css">
-	
+  <meta charset="utf-8">
+  <title>barchart</title>
+  <meta name="description" content="D3 starter template">
+  <meta name="author" content="">
+  <link rel="stylesheet" href="index.css">
 </head>
+
 <body>
-
-	<script src="assets/scripts/main.js"></script>
-
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+  <script src="index.js"></script>
+  <h2 id="sad" class="horiz-flex-center">Average temperatures by month in <select></select></h2>
+  <div style="position: relative"> <!--Important!  Parent is position: relative-->
+    <div class="tooltip">My tooltip!</div>
+    <svg width="500" height="300"></svg>
+  </div>
 </body>
 </html>
