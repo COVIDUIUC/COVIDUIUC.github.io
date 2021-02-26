@@ -2,18 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>barchart</title>
+  <title>D3 starter template</title>
   <meta name="description" content="D3 starter template">
-  <meta name="author" content="">
-  <link rel="stylesheet" href="index.css">
+  <meta name="author" content="Long Phan">
+  <style>
+    body {
+        font-family: sans-serif;
+    }
+    .horiz-flex-center {
+        display: flex;
+        align-items: center;
+    }
+    .tooltip {
+      position: absolute;
+      display: inline-block;
+      background-color: rgba(255, 255, 255, 0.8);
+      border: 1px solid lightgrey;
+      font-size: small;
+      padding: 5px;
+    }
+
+  </style>
+  <!-- <link rel="stylesheet" href="index.css"> -->
 </head>
 
 <body>
+  <p>Modify this HTML file as you see fit.  Don't forget to read the README!</p>
   <script src="https://d3js.org/d3.v6.min.js"></script>
-  <script src="index.js"></script>
-  <h2 id="sad" class="horiz-flex-center">Average temperatures by month in <select></select></h2>
+  <script src="interactiveBarChart.js"></script>
+  <h2 class="horiz-flex-center">Average temperatures by month in <select></select></h2>
   <div style="position: relative"> <!--Important!  Parent is position: relative-->
-    <div class="tooltip">My tooltip!</div>
+    <div class="tooltip" id="toolTip"></div>
     <svg width="500" height="300"></svg>
   </div>
 </body>
