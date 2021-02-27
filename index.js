@@ -2,86 +2,26 @@
  * Main entry point -- this file has been added to index.html in a <script> tag. Add whatever code you want below.
  */
 "use strict";
-
-const weatherData = [
-  // Temperatures are in F; sorry metric system users.
-  {
-    city: "(none selected)",
-    averageHighByMonth: [],
-  },
-  {
-    // Arrays of length 12, one element for each month, starting with January.
-    city: "Urbana, USA",
-    averageHighByMonth: [
-      32.9,
-      37.7,
-      49.9,
-      62.8,
-      73.4,
-      82.5,
-      85.0,
-      83.7,
-      78.2,
-      65.2,
-      50.6,
-      36.7,
-    ],
-  },
-  {
-    city: "London, UK",
-    averageHighByMonth: [
-      46.6,
-      47.1,
-      52.3,
-      57.6,
-      64.2,
-      70.2,
-      74.3,
-      73.8,
-      68.0,
-      59.9,
-      52.0,
-      46.9,
-    ],
-  },
-  {
-    city: "Cape Town, SA",
-    averageHighByMonth: [
-      79.0,
-      79.7,
-      77.7,
-      73.4,
-      68.5,
-      64.6,
-      63.5,
-      64.0,
-      66.6,
-      70.3,
-      74.3,
-      76.8,
-    ],
-  },
-];
+import { parseCOVIDData, parseRedditData } from "./util.js";
 
 const MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
+  "Aug 2020",
+  "Sep 2020",
+  "Oct 2020",
+  "Nov 2020",
+  "Dec 2020",
+  "Jan 2021",
+  "Feb 2021",
 ];
 
-const padding = { TOP: 0, RIGHT: 20, LEFT: 60, BOTTOM: 40 };
-const allTemps = weatherData.map((city) => city.averageHighByMonth).flat();
-const TempCorrespondingTo0 = d3.max(allTemps);
-const TempCorrespondingToHeight = d3.min(allTemps);
+const dates = [...Array(32).keys()].slice(1);
+const padding = { TOP: 10, RIGHT: 20, LEFT: 60, BOTTOM: 40 };
+//line chart const
+const NumPostCorrespondingTo0 = 50;
+const NumPostCorrespondingToHeight = 0;
+//bar chat const
+// const TempCorrespondingTo0 = d3.max(allTemps);
+// const TempCorrespondingToHeight = d3.min(allTemps);
 window.addEventListener("load", drawrapper);
 
 function populateDropdown(xForMonth, yForTemp) {
@@ -89,7 +29,7 @@ function populateDropdown(xForMonth, yForTemp) {
   // select.append("option").text("dsad");
   select
     .selectAll("option")
-    .data(weatherData.map((city) => city.city))
+    .data(MONTHS)
     .join("option")
     .text((d) => d);
 
@@ -162,34 +102,72 @@ function drawBar(idx, xForMonth, yForTemp) {
     });
 }
 
-function drawrapper() {
+function drawLine(data, idx, x, y) {
+  const svg = d3.select("svg");
+  //FIXME: hardcode idx
+  let monthlyData = parseRedditData(MONTHS[0], data);
+  console.log(monthlyData);
+  let valueline = d3
+    .line()
+    .x(function (d, i) {
+      return x(i + 1);
+    })
+    .y(function (d) {
+      return y(d.num);
+    })
+    .curve(d3.curveMonotoneX);
+  svg
+    .append("path")
+    .data([monthlyData])
+    .attr("class", "line")
+    .attr("d", valueline)
+    .attr("transform", `translate(${7}, 0)`);
+  svg
+    .append("g")
+    .selectAll("circle")
+    .data(monthlyData)
+    .join("circle")
+    .attr("cx", (d, i) => x(i + 1))
+    .attr("cy", (d) => y(d.num))
+    .attr("r", 2.5)
+    .attr("fill", "#69b3a2")
+    .attr("transform", `translate(${7}, 0)`);
+}
+
+async function drawrapper() {
   // d3 has been added to the html in a <script> tag so referencing it here should work.
   const svg = d3.select("svg");
-
+  let data = await d3.csv("./data/timestamped_post_count_data.csv");
   const xForMonth = d3
     .scaleBand()
-    .domain(MONTHS)
-    .range([0 + padding.LEFT, svg.attr("width") - padding.RIGHT]) // TODO
-    .padding(0.3); // TODO experiment and choose a number between 0 and 1
+    .domain(dates)
+    .range([0 + padding.LEFT, svg.attr("width") - padding.RIGHT])
+    .padding(0.3);
 
-  const yForTemp = d3
+  const yForNum = d3
     .scaleLinear()
-    .domain([TempCorrespondingTo0 + 10, TempCorrespondingToHeight - 10])
+    .domain([NumPostCorrespondingTo0, NumPostCorrespondingToHeight])
     .range([0 + padding.TOP, svg.attr("height") - padding.BOTTOM]);
 
-  populateDropdown(xForMonth, yForTemp);
+  populateDropdown(xForMonth, yForNum);
 
-  //y axis and text
-  const yAxis = svg
+  //y axis for bar chart
+  const leftyAxis = svg
     .append("g")
-    .call(d3.axisLeft(yForTemp))
-    .attr("transform", `translate(${padding.LEFT}, 0)`); // TODO xTranslation
+    .call(d3.axisLeft(yForNum))
+    .attr("transform", `translate(${padding.LEFT}, 0)`);
+  //y axis for line graph
+  const rightyAxis = svg
+    .append("g")
+    .call(d3.axisRight(yForNum))
+    .attr("transform", `translate(${svg.attr("width") - padding.RIGHT}, 0)`);
+
   const xAxis = svg
     .append("g")
     .call(d3.axisBottom(xForMonth))
     .attr("transform", `translate(0, ${svg.attr("height") - padding.BOTTOM})`); // TODO
 
-  const yTextyPosition = yForTemp.range().reduce((a, b) => a + b, 0) / 2;
+  const yTextyPosition = yForNum.range().reduce((a, b) => a + b, 0) / 2;
   svg
     .append("text")
     .attr("font-size", 12) // This code duplication signals that these properties
@@ -202,5 +180,6 @@ function drawrapper() {
     .attr("text-anchor", "middle")
     .text("Average high temperature(F)");
 
-  drawBar(0, xForMonth, yForTemp);
+  // drawBar(0, xForMonth, yForTemp);
+  drawLine(data, 0, xForMonth, yForNum);
 }

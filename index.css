@@ -16,3 +16,8 @@ body {
   padding: 5px;
   opacity: 0;
 }
+
+path {
+  fill: none;
+  stroke: #000;
+}
