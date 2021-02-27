@@ -3,6 +3,12 @@ function parseCOVIDData() {
   console.log("covid data");
 }
 
+/**
+ * parse reddit data
+ * return format: [{num: 1}, {num:2}...]
+ * @param {String} monthYear month and year string which should be gotten from MONTHS i.e. "Aug 2020"
+ * @param {List} data reddit data(timestamped_post_count_data.csv)
+ */
 function parseRedditData(monthYear, data) {
   // get start index using epoch time
   const [month, year] = monthYear.split(" ");

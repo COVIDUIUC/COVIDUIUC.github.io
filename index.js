@@ -15,7 +15,7 @@ const MONTHS = [
 ];
 
 const dates = [...Array(32).keys()].slice(1);
-const padding = { TOP: 10, RIGHT: 20, LEFT: 60, BOTTOM: 40 };
+const padding = { TOP: 10, RIGHT: 60, LEFT: 60, BOTTOM: 40 };
 //line chart const
 const NumPostCorrespondingTo0 = 50;
 const NumPostCorrespondingToHeight = 0;
@@ -179,6 +179,19 @@ async function drawrapper() {
     )
     .attr("text-anchor", "middle")
     .text("Average high temperature(F)");
+  svg
+    .append("text")
+    .attr("font-size", 12) // This code duplication signals that these properties
+    .attr("font-weight", "bold") // should be moved to CSS. For now, the code is this
+    .attr("font-family", "sans-serif") // way to simplify our directions to you.
+    .attr(
+      "transform",
+      `translate(${
+        svg.attr("width") - padding.RIGHT / 2
+      } ${yTextyPosition}) rotate(90)`
+    )
+    .attr("text-anchor", "middle")
+    .text("Number of COVID related post");
 
   // drawBar(0, xForMonth, yForTemp);
   drawLine(data, 0, xForMonth, yForNum);
