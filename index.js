@@ -34,7 +34,9 @@ function populateDropdown(xForMonth, yForCovid) {
     .text((d) => d);
 
   select.on("change", (changeEvent, dataPoint) => {
+      drawrapper(changeEvent.target.selectedIndex);
     // Runs when the dropdown is changed
+
     console.log(changeEvent.target.selectedIndex); // The newly selected index
     // drawBar(dataPoint, changeEvent.target.selectedIndex, xForMonth, yForCovid);
   });
@@ -50,7 +52,6 @@ function daysInMonth(start, end) {
 function drawBar(data, idx, xForMonth, yForCovid) {
   const svg = d3.select("svg");
   const cases_tooltip = d3.select("#cases_tooltip");
-
   let casesList = parseCOVIDData(MONTHS[idx], data);
   let dayNum = daysInMonth(1, casesList.length);
 
@@ -129,7 +130,7 @@ function drawLine(count_data, example_data, idx, x, y) {
   const epochs = d3.local();
   localVars.set(x, x);
   localVars.set(y, y);
-  
+
   svg
     .append("g")
     .selectAll("circle")
@@ -157,7 +158,7 @@ function drawLine(count_data, example_data, idx, x, y) {
         .style("top", localVars.get(y)(d.num) + 5 + "px")
         .style("display", "inline-block")
       d3.select('#posts_tooltip_text').text(d.num + " posts");
-      
+
       let epoch_val = epochs.get(this)
       // Bit of hard coding
       for (let c = 0; c < 3; c++) {
@@ -180,8 +181,9 @@ function drawLine(count_data, example_data, idx, x, y) {
     });
 }
 
-async function drawrapper() {
+async function drawrapper(idx=0) {
   // d3 has been added to the html in a <script> tag so referencing it here should work.
+  d3.selectAll("svg > *").remove();
   const svg = d3.select("svg");
   const redditData = await d3.csv("./data/timestamped_post_count_data.csv");
   const covidData = await d3.csv("./data/Covid_data.csv");
@@ -250,7 +252,10 @@ async function drawrapper() {
     )
     .attr("text-anchor", "middle")
     .text("Number of COVID related post");
-
-  drawBar(covidData, 0, xForMonth, yForCovid);
-  drawLine(redditData, exampleData, 0, xForMonth, yForNum);
+    if (Number.isInteger(idx) == 0){
+        idx = 0
+    }
+  drawBar(covidData, idx, xForMonth, yForCovid);
+  drawLine(redditData, exampleData, idx, xForMonth, yForNum);
+  console.log(idx)
 }
