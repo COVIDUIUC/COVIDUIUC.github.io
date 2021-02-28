@@ -41,9 +41,9 @@ function populateDropdown(xForMonth, yForCovid) {
 }
 
 // this tells the number of days in a particular month
-function daysInMonth(lo, hi) {
+function daysInMonth(start, end) {
   var days = [];
-  for (let i = lo; i <= hi; i++) { days.push(i); }
+  for (let i = start; i <= end; i++) { days.push(i); }
   return days;
 }
 
@@ -52,9 +52,7 @@ function drawBar(data, idx, xForMonth, yForCovid) {
   const tooltip = d3.select(".tooltip");
 
   let casesList = parseCOVIDData(MONTHS[idx], data);
-  let startDay = (MONTHS[idx] === "Jul 2020" ? 6 : 1);
-  let endDay = casesList.length;
-  let monthSpan = daysInMonth(startDay, endDay);
+  let dayNum = daysInMonth(1, casesList.length);
 
   svg.selectAll("rect")
     .data(casesList)
@@ -75,7 +73,7 @@ function drawBar(data, idx, xForMonth, yForCovid) {
           .attr("y", svg.attr("height") - padding.BOTTOM)
           .remove()
     )
-      .attr("x", (dataPoint, i) => xForMonth(monthSpan[i]))
+      .attr("x", (dataPoint, i) => xForMonth(dayNum[i]))
       // .call((selection) => {
       //   selection
       //     .transition()
