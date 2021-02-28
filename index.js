@@ -225,6 +225,16 @@ async function drawrapper(idx=0) {
 
   const yTextyPosition = yForNum.range().reduce((a, b) => a + b, 0) / 2;
 
+  // Center Label (day of month)
+  svg
+    .append("text")
+    .attr("font-size", 12)
+    .attr("font-weight", "bold")
+    .attr("font-family", "sans-serif")
+    .attr("transform", 'translate(350,290)')
+    .attr("text-anchor", "middle")
+    .text("Day of the month");
+
   // label for the left vertical axis (COVID cases)
   svg
     .append("text")
