@@ -40,9 +40,12 @@ function parseCOVIDData(monthYear, data) {
 
   const firstIdx = findFirstIdx(month, year, data);
   const end = daysInMonth[month];
-  if (month === "Jul" && year === "2020") { end = 25; } // since our data starts from Jul 6th 2020 and that month ends 25 days later
-  
   let casesList = [];
+  if (month === "Jul" && year === "2020") { 
+    casesList = Array(6).fill(0);
+    end = 25; 
+  } // since our data starts from Jul 6th 2020 and that month ends 25 days later
+  
   for (let start = 1, idx = firstIdx; idx < data.length && start <= end; start++, idx++) {
     casesList.push(parseInt(data[idx].totalNewCases));
   }
