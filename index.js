@@ -1,8 +1,5 @@
-/**
- * Main entry point -- this file has been added to index.html in a <script> tag. Add whatever code you want below.
- */
 "use strict";
-import { parseCOVIDData, parseRedditData} from "./util.js";
+import { parseCOVIDData, parseRedditData } from "./util.js";
 
 const MONTHS = [
   "Aug 2020",
@@ -15,7 +12,7 @@ const MONTHS = [
 ];
 
 const dates = [...Array(32).keys()].slice(1);
-const padding = { TOP: 10, RIGHT: 60, LEFT: 60, BOTTOM: 40 };
+const padding = { TOP: 10, RIGHT: 60, LEFT: 60, BOTTOM: 50 };
 //line chart const
 const NumPostCorrespondingTo0 = 50;
 const NumPostCorrespondingToHeight = 0;
@@ -34,10 +31,10 @@ function populateDropdown(xForMonth, yForCovid) {
     .text((d) => d);
 
   select.on("change", (changeEvent, dataPoint) => {
-      drawrapper(changeEvent.target.selectedIndex);
+    drawrapper(changeEvent.target.selectedIndex);
     // Runs when the dropdown is changed
 
-    console.log(changeEvent.target.selectedIndex); // The newly selected index
+    // console.log(changeEvent.target.selectedIndex); // The newly selected index
     // drawBar(dataPoint, changeEvent.target.selectedIndex, xForMonth, yForCovid);
   });
 }
@@ -45,7 +42,9 @@ function populateDropdown(xForMonth, yForCovid) {
 // this tells the number of days in a particular month
 function daysInMonth(start, end) {
   var days = [];
-  for (let i = start; i <= end; i++) { days.push(i); }
+  for (let i = start; i <= end; i++) {
+    days.push(i);
+  }
   return days;
 }
 
@@ -55,7 +54,8 @@ function drawBar(data, idx, xForMonth, yForCovid) {
   let casesList = parseCOVIDData(MONTHS[idx], data);
   let dayNum = daysInMonth(1, casesList.length);
 
-  svg.selectAll("rect")
+  svg
+    .selectAll("rect")
     .data(casesList)
     .join(
       (enterSelection) => {
@@ -74,41 +74,42 @@ function drawBar(data, idx, xForMonth, yForCovid) {
           .attr("y", svg.attr("height") - padding.BOTTOM)
           .remove()
     )
-      .attr("x", (dataPoint, i) => xForMonth(dayNum[i]))
-      // .call((selection) => {
-      //   selection
-      //     .transition()
-      //     .attr("y", (dataPoint, i) => yForCovid(dataPoint))
-      //     .attr("height", (dataPoint, i) => yForCovid(-dataPoint + maxCases + 9));
-      // })
-      .attr("width", (dataPoint, i) => xForMonth.bandwidth())
-      .attr("y", (dataPoint, i) => yForCovid(dataPoint))
-      .attr("height", (dataPoint, i) => yForCovid(-dataPoint + maxCases + 9))
-      .attr("fill", "#F4900C")
-      .on("mouseover", (mouseEvent, d) => {
-        // Runs when the mouse enters a rect.  d is the corresponding data point.
-        // Show the tooltip and adjust its text to say the temperature.
-        let [x, y] = d3.pointer(mouseEvent);
-        cases_tooltip
-          .style("left", x + 16 + "px")
-          .style("top", y + 16 + "px")
-          .style("display", "inline-block")
-          .text(d + " cases");
-      })
-      .on("mousemove", (mouseEvent, d) => {
-        let [x, y] = d3.pointer(mouseEvent);
-        cases_tooltip.style("left", x + 16 + "px").style("top", y + 16 + "px");
-      })
-      .on("mouseout", (mouseEvent, d) => { cases_tooltip.style("display", "none") });
+    .attr("x", (dataPoint, i) => xForMonth(dayNum[i]))
+    // .call((selection) => {
+    //   selection
+    //     .transition()
+    //     .attr("y", (dataPoint, i) => yForCovid(dataPoint))
+    //     .attr("height", (dataPoint, i) => yForCovid(-dataPoint + maxCases + 9));
+    // })
+    .attr("width", (dataPoint, i) => xForMonth.bandwidth())
+    .attr("y", (dataPoint, i) => yForCovid(dataPoint))
+    .attr("height", (dataPoint, i) => yForCovid(-dataPoint + maxCases + 9))
+    .attr("fill", "#F4900C")
+    .on("mouseover", (mouseEvent, d) => {
+      // Runs when the mouse enters a rect.  d is the corresponding data point.
+      // Show the tooltip and adjust its text to say the temperature.
+      let [x, y] = d3.pointer(mouseEvent);
+      cases_tooltip
+        .style("left", x + 16 + "px")
+        .style("top", y + 16 + "px")
+        .style("display", "inline-block")
+        .text(d + " cases");
+    })
+    .on("mousemove", (mouseEvent, d) => {
+      let [x, y] = d3.pointer(mouseEvent);
+      cases_tooltip.style("left", x + 16 + "px").style("top", y + 16 + "px");
+    })
+    .on("mouseout", (mouseEvent, d) => {
+      cases_tooltip.style("display", "none");
+    });
 }
 
 function drawLine(count_data, example_data, idx, x, y) {
   const svg = d3.select("svg");
   const posts_tooltip = d3.select("#posts_tooltip");
-  //FIXME: hardcode idx
   let monthlyCountData = parseRedditData(MONTHS[idx], count_data);
-  let monthlyExampleData = example_data
-  console.log(example_data)
+  let monthlyExampleData = example_data;
+  // console.log(example_data);
   let valueline = d3
     .line()
     .x(function (d, i) {
@@ -141,30 +142,32 @@ function drawLine(count_data, example_data, idx, x, y) {
     .attr("r", 4)
     .attr("fill", "#69b3a2")
     .attr("transform", `translate(${7}, 0)`)
-    .each(function(d, i) {
-      console.log("test")
-      console.log(this)
-      indexes.set(this, i);            // Store index in local variable.
-      epochs.set(this, d.epoch)
+    .each(function (d, i) {
+      // console.log("test");
+      // console.log(this);
+      indexes.set(this, i); // Store index in local variable.
+      epochs.set(this, d.epoch);
     })
-    .on("mouseover", function(mouseEvent, d) { // Posts tooltip
-      let i = indexes.get(this)
-      console.log(posts_tooltip.locked)
+    .on("mouseover", function (mouseEvent, d) {
+      // Posts tooltip
+      let i = indexes.get(this);
+      // console.log(posts_tooltip.locked);
       // Unlocks tooltip
-      posts_tooltip.locked = false
+      posts_tooltip.locked = false;
       // Shows post tooltip.
       posts_tooltip
         .style("left", localVars.get(x)(i + 1) + 5 + "px")
         .style("top", localVars.get(y)(d.num) + 5 + "px")
-        .style("display", "inline-block")
-      d3.select('#posts_tooltip_text').text(d.num + " posts");
+        .style("display", "inline-block");
+      d3.select("#posts_tooltip_text").text(d.num + " posts");
 
-      let epoch_val = epochs.get(this)
+      let epoch_val = epochs.get(this);
       // Bit of hard coding
       for (let c = 0; c < 3; c++) {
-        const link = d3.select("#post_"+(c+1))
+        const link = d3.select("#post_" + (c + 1));
         if (c < monthlyExampleData[epoch_val].length) {
-          link.text(monthlyExampleData[epoch_val][c][0])
+          link
+            .text(monthlyExampleData[epoch_val][c][0])
             .attr("href", monthlyExampleData[epoch_val][c][1]);
         } else {
           link.text("");
@@ -172,22 +175,23 @@ function drawLine(count_data, example_data, idx, x, y) {
       }
     })
     .on("mouseout", (mouseEvent, d) => {
-      if (!posts_tooltip.locked){
-        posts_tooltip.style("display", "none")
+      if (!posts_tooltip.locked) {
+        posts_tooltip.style("display", "none");
       }
     })
     .on("mousedown", (mouseEvent, d) => {
-      posts_tooltip.locked = !posts_tooltip.locked
+      posts_tooltip.locked = !posts_tooltip.locked;
     });
 }
 
-async function drawrapper(idx=0) {
-  // d3 has been added to the html in a <script> tag so referencing it here should work.
+async function drawrapper(idx = 0) {
   d3.selectAll("svg > *").remove();
   const svg = d3.select("svg");
   const redditData = await d3.csv("./data/timestamped_post_count_data.csv");
   const covidData = await d3.csv("./data/Covid_data.csv");
-  const exampleData = await d3.json("./data/timestamped_example_post_data.json");
+  const exampleData = await d3.json(
+    "./data/timestamped_example_post_data.json"
+  );
 
   const xForMonth = d3
     .scaleBand()
@@ -200,7 +204,8 @@ async function drawrapper(idx=0) {
     .domain([NumPostCorrespondingTo0, NumPostCorrespondingToHeight])
     .range([0 + padding.TOP, svg.attr("height") - padding.BOTTOM]);
 
-  const yForCovid = d3.scaleLinear()
+  const yForCovid = d3
+    .scaleLinear()
     .domain([maxCases, minCases])
     .range([0 + padding.TOP, svg.attr("height") - padding.BOTTOM]);
 
@@ -221,7 +226,7 @@ async function drawrapper(idx=0) {
   const xAxis = svg
     .append("g")
     .call(d3.axisBottom(xForMonth))
-    .attr("transform", `translate(0, ${svg.attr("height") - padding.BOTTOM})`); // TODO
+    .attr("transform", `translate(0, ${svg.attr("height") - padding.BOTTOM})`);
 
   const yTextyPosition = yForNum.range().reduce((a, b) => a + b, 0) / 2;
 
@@ -243,7 +248,9 @@ async function drawrapper(idx=0) {
     .attr("font-family", "sans-serif")
     .attr(
       "transform",
-      `translate(${padding.LEFT / 2} ${yForCovid.range().reduce((a, b) => a + b, 0) / 2}) rotate(-90)`
+      `translate(${padding.LEFT / 2} ${
+        yForCovid.range().reduce((a, b) => a + b, 0) / 2
+      }) rotate(-90)`
     )
     .attr("text-anchor", "middle")
     .text("Number of positive COVID cases");
@@ -262,10 +269,23 @@ async function drawrapper(idx=0) {
     )
     .attr("text-anchor", "middle")
     .text("Number of COVID related post");
-    if (Number.isInteger(idx) == 0){
-        idx = 0
-    }
+  if (Number.isInteger(idx) == 0) {
+    idx = 0;
+  }
+
+  //text for x axis
+  const xTextxPosition = xForMonth.range().reduce((a, b) => a + b, 0) / 2;
+  svg
+    .append("text")
+    .attr("font-size", 12)
+    .attr("font-weight", "bold")
+    .attr("font-family", "sans-serif")
+    .attr("x", xTextxPosition)
+    .attr("y", svg.attr("height") - padding.BOTTOM / 2)
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "hanging")
+    .text("Date");
   drawBar(covidData, idx, xForMonth, yForCovid);
   drawLine(redditData, exampleData, idx, xForMonth, yForNum);
-  console.log(idx)
+  // console.log(idx);
 }
