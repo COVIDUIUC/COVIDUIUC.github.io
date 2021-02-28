@@ -20,11 +20,11 @@ const padding = { TOP: 10, RIGHT: 60, LEFT: 60, BOTTOM: 40 };
 const NumPostCorrespondingTo0 = 50;
 const NumPostCorrespondingToHeight = 0;
 //bar chat const
-// const TempCorrespondingTo0 = d3.max(allTemps);
-// const TempCorrespondingToHeight = d3.min(allTemps);
+const maxCases = 240;
+const minCases = 0;
 window.addEventListener("load", drawrapper);
 
-function populateDropdown(xForMonth, yForTemp) {
+function populateDropdown(xForMonth, yForCovid) {
   const select = d3.select("select");
   // select.append("option").text("dsad");
   select
@@ -36,17 +36,28 @@ function populateDropdown(xForMonth, yForTemp) {
   select.on("change", (changeEvent, dataPoint) => {
     // Runs when the dropdown is changed
     console.log(changeEvent.target.selectedIndex); // The newly selected index
-    drawBar(changeEvent.target.selectedIndex, xForMonth, yForTemp);
+    // drawBar(dataPoint, changeEvent.target.selectedIndex, xForMonth, yForCovid);
   });
 }
 
-function drawBar(idx, xForMonth, yForTemp) {
+// this tells the number of days in a particular month
+function daysInMonth(lo, hi) {
+  var days = [];
+  for (let i = lo; i <= hi; i++) { days.push(i); }
+  return days;
+}
+
+function drawBar(data, idx, xForMonth, yForCovid) {
   const svg = d3.select("svg");
   const tooltip = d3.select(".tooltip");
 
-  svg
-    .selectAll("rect")
-    .data(weatherData[idx].averageHighByMonth)
+  let casesList = parseCOVIDData(MONTHS[idx], data);
+  let startDay = (MONTHS[idx] === "Jul 2020" ? 6 : 1);
+  let endDay = casesList.length;
+  let monthSpan = daysInMonth(startDay, endDay);
+
+  svg.selectAll("rect")
+    .data(casesList)
     .join(
       (enterSelection) => {
         return enterSelection
@@ -64,49 +75,38 @@ function drawBar(idx, xForMonth, yForTemp) {
           .attr("y", svg.attr("height") - padding.BOTTOM)
           .remove()
     )
-    .attr("x", (dataPoint, i) => xForMonth(MONTHS[i])) // i is dataPoint’s index in the data array
-    // .attr("y", (dataPoint, i) => yForTemp(dataPoint))
-    .call((selection) => {
-      selection
-        .transition()
-        .attr("y", (dataPoint, i) => yForTemp(dataPoint))
-        .attr("height", (dataPoint, i) =>
-          // yForTemp((dataPoint - TempCorrespondingToHeight + 10))
-          yForTemp(
-            -dataPoint + TempCorrespondingTo0 + TempCorrespondingToHeight
-          )
-        );
-    })
-    .attr("width", (dataPoint, i) => xForMonth.bandwidth())
-    // .attr("height", (dataPoint, i) =>
-    //   // yForTemp((dataPoint - TempCorrespondingToHeight + 10))
-    //   yForTemp(-dataPoint + TempCorrespondingTo0 + TempCorrespondingToHeight)
-    // )
-    .attr("fill", "steelblue")
-    .on("mouseover", (mouseEvent, d) => {
-      // Runs when the mouse enters a rect.  d is the corresponding data point.
-      // Show the tooltip and adjust its text to say the temperature.
-      let [x, y] = d3.pointer(mouseEvent);
-      tooltip
-        .style("left", x + 16 + "px")
-        .style("top", y + 16 + "px")
-        .style("opacity", 1)
-        .text(d);
-    })
-    .on("mousemove", (mouseEvent, d) => {
-      let [x, y] = d3.pointer(mouseEvent);
-      tooltip.style("left", x + 16 + "px").style("top", y + 16 + "px");
-    })
-    .on("mouseout", (mouseEvent, d) => {
-      tooltip.style("opacity", 0);
-    });
+      .attr("x", (dataPoint, i) => xForMonth(monthSpan[i]))
+      // .call((selection) => {
+      //   selection
+      //     .transition()
+      //     .attr("y", (dataPoint, i) => yForCovid(dataPoint))
+      //     .attr("height", (dataPoint, i) => yForCovid(-dataPoint + maxCases + 9));
+      // })
+      .attr("width", (dataPoint, i) => xForMonth.bandwidth())
+      .attr("y", (dataPoint, i) => yForCovid(dataPoint))
+      .attr("height", (dataPoint, i) => yForCovid(-dataPoint + maxCases + 9))
+      .attr("fill", "#F4900C")
+      .on("mouseover", (mouseEvent, d) => {
+        // Runs when the mouse enters a rect.  d is the corresponding data point.
+        // Show the tooltip and adjust its text to say the temperature.
+        let [x, y] = d3.pointer(mouseEvent);
+        tooltip
+          .style("left", x + 16 + "px")
+          .style("top", y + 16 + "px")
+          .style("opacity", 1)
+          .text(d + " cases");
+      })
+      .on("mousemove", (mouseEvent, d) => {
+        let [x, y] = d3.pointer(mouseEvent);
+        tooltip.style("left", x + 16 + "px").style("top", y + 16 + "px");
+      })
+      .on("mouseout", (mouseEvent, d) => { tooltip.style("opacity", 0) });
 }
 
 function drawLine(data, idx, x, y) {
   const svg = d3.select("svg");
   //FIXME: hardcode idx
-  let monthlyData = parseRedditData(MONTHS[0], data);
-  console.log(monthlyData);
+  let monthlyData = parseRedditData(MONTHS[idx], data);
   let valueline = d3
     .line()
     .x(function (d, i) {
@@ -137,7 +137,9 @@ function drawLine(data, idx, x, y) {
 async function drawrapper() {
   // d3 has been added to the html in a <script> tag so referencing it here should work.
   const svg = d3.select("svg");
-  let data = await d3.csv("./data/timestamped_post_count_data.csv");
+  const redditData = await d3.csv("./data/timestamped_post_count_data.csv");
+  const covidData = await d3.csv("./data/Covid_data.csv");
+
   const xForMonth = d3
     .scaleBand()
     .domain(dates)
@@ -149,13 +151,18 @@ async function drawrapper() {
     .domain([NumPostCorrespondingTo0, NumPostCorrespondingToHeight])
     .range([0 + padding.TOP, svg.attr("height") - padding.BOTTOM]);
 
+  const yForCovid = d3.scaleLinear()
+    .domain([maxCases, minCases])
+    .range([0 + padding.TOP, svg.attr("height") - padding.BOTTOM]);
+
   populateDropdown(xForMonth, yForNum);
 
   //y axis for bar chart
   const leftyAxis = svg
     .append("g")
-    .call(d3.axisLeft(yForNum))
+    .call(d3.axisLeft(yForCovid))
     .attr("transform", `translate(${padding.LEFT}, 0)`);
+
   //y axis for line graph
   const rightyAxis = svg
     .append("g")
@@ -168,22 +175,26 @@ async function drawrapper() {
     .attr("transform", `translate(0, ${svg.attr("height") - padding.BOTTOM})`); // TODO
 
   const yTextyPosition = yForNum.range().reduce((a, b) => a + b, 0) / 2;
+
+  // label for the left vertical axis (COVID cases)
   svg
     .append("text")
-    .attr("font-size", 12) // This code duplication signals that these properties
-    .attr("font-weight", "bold") // should be moved to CSS. For now, the code is this
-    .attr("font-family", "sans-serif") // way to simplify our directions to you.
+    .attr("font-size", 12)
+    .attr("font-weight", "bold")
+    .attr("font-family", "sans-serif")
     .attr(
       "transform",
-      `translate(${padding.LEFT / 2} ${yTextyPosition}) rotate(-90)`
+      `translate(${padding.LEFT / 2} ${yForCovid.range().reduce((a, b) => a + b, 0) / 2}) rotate(-90)`
     )
     .attr("text-anchor", "middle")
-    .text("Average high temperature(F)");
+    .text("Number of positive COVID cases");
+
+  // label for the right vertical axis (Reddit posts)
   svg
     .append("text")
-    .attr("font-size", 12) // This code duplication signals that these properties
-    .attr("font-weight", "bold") // should be moved to CSS. For now, the code is this
-    .attr("font-family", "sans-serif") // way to simplify our directions to you.
+    .attr("font-size", 12)
+    .attr("font-weight", "bold")
+    .attr("font-family", "sans-serif")
     .attr(
       "transform",
       `translate(${
@@ -193,6 +204,6 @@ async function drawrapper() {
     .attr("text-anchor", "middle")
     .text("Number of COVID related post");
 
-  // drawBar(0, xForMonth, yForTemp);
-  drawLine(data, 0, xForMonth, yForNum);
+  drawBar(covidData, 0, xForMonth, yForCovid);
+  drawLine(redditData, 0, xForMonth, yForNum);
 }
