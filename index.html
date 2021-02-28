@@ -13,7 +13,14 @@
   <script src="index.js" type='module'></script>
   <h2 id="sad" class="horiz-flex-center">Average temperatures by month in <select></select></h2>
   <div style="position: relative"> <!--Important!  Parent is position: relative-->
-    <div class="tooltip">My tooltip!</div>
+    <div class="tooltip" id="cases_tooltip">My tooltip!</div>
+    <div class="tooltip" id="posts_tooltip">
+      <span id='posts_tooltip_text'># COVID-19 Rddit posts </span><br/>
+      <span> </span>
+      <a id="post_1" href="post_1_url" target="_blank"> Post 1 Title</a><br/>
+      <a id="post_2" href="post_2_url" target="_blank"> Post 1 Title</a><br/>
+      <a id="post_3" href="post_3_url" target="_blank"> Post 1 Title</a>
+    </div>
     <svg width="700" height="300"></svg>
   </div>
 </body>
