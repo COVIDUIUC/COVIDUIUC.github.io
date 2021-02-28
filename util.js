@@ -64,7 +64,7 @@ function parseRedditData(monthYear, data) {
   // get start epoch time of this month(in seconds)
   const start_epoch = new Date(`${month} 01 ${year}`).getTime() / 1000;
   // find start index in data
-  const start_index = data.findIndex((element) => element.epoch > start_epoch);
+  const start_index = data.findIndex((element) => element.epoch >= start_epoch);
   //console.log(start_index);
 
   // push daily data
@@ -79,10 +79,9 @@ function parseRedditData(monthYear, data) {
     if (!date_string.includes(month)) {
       break;
     }
-    res.push({ num: parseInt(record.covid_post_count) });
+    res.push({ epoch: parseInt(record.epoch), num: parseInt(record.covid_post_count) });
   }
   return res;
 }
 
-export { parseCOVIDData, parseRedditData };
-
+export { parseCOVIDData, parseRedditData};

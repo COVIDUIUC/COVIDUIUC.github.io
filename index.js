@@ -2,7 +2,7 @@
  * Main entry point -- this file has been added to index.html in a <script> tag. Add whatever code you want below.
  */
 "use strict";
-import { parseCOVIDData, parseRedditData } from "./util.js";
+import { parseCOVIDData, parseRedditData} from "./util.js";
 
 const MONTHS = [
   "Aug 2020",
@@ -49,7 +49,7 @@ function daysInMonth(start, end) {
 
 function drawBar(data, idx, xForMonth, yForCovid) {
   const svg = d3.select("svg");
-  const tooltip = d3.select(".tooltip");
+  const cases_tooltip = d3.select("#cases_tooltip");
 
   let casesList = parseCOVIDData(MONTHS[idx], data);
   let dayNum = daysInMonth(1, casesList.length);
@@ -88,23 +88,26 @@ function drawBar(data, idx, xForMonth, yForCovid) {
         // Runs when the mouse enters a rect.  d is the corresponding data point.
         // Show the tooltip and adjust its text to say the temperature.
         let [x, y] = d3.pointer(mouseEvent);
-        tooltip
+        cases_tooltip
           .style("left", x + 16 + "px")
           .style("top", y + 16 + "px")
-          .style("opacity", 1)
+          .style("display", "inline-block")
           .text(d + " cases");
       })
       .on("mousemove", (mouseEvent, d) => {
         let [x, y] = d3.pointer(mouseEvent);
-        tooltip.style("left", x + 16 + "px").style("top", y + 16 + "px");
+        cases_tooltip.style("left", x + 16 + "px").style("top", y + 16 + "px");
       })
-      .on("mouseout", (mouseEvent, d) => { tooltip.style("opacity", 0) });
+      .on("mouseout", (mouseEvent, d) => { cases_tooltip.style("display", "none") });
 }
 
-function drawLine(data, idx, x, y) {
+function drawLine(count_data, example_data, idx, x, y) {
   const svg = d3.select("svg");
+  const posts_tooltip = d3.select("#posts_tooltip");
   //FIXME: hardcode idx
-  let monthlyData = parseRedditData(MONTHS[idx], data);
+  let monthlyCountData = parseRedditData(MONTHS[idx], count_data);
+  let monthlyExampleData = example_data
+  console.log(example_data)
   let valueline = d3
     .line()
     .x(function (d, i) {
@@ -116,20 +119,65 @@ function drawLine(data, idx, x, y) {
     .curve(d3.curveMonotoneX);
   svg
     .append("path")
-    .data([monthlyData])
+    .data([monthlyCountData])
     .attr("class", "line")
     .attr("d", valueline)
     .attr("transform", `translate(${7}, 0)`);
+
+  const localVars = d3.local();
+  const indexes = d3.local();
+  const epochs = d3.local();
+  localVars.set(x, x);
+  localVars.set(y, y);
+  
   svg
     .append("g")
     .selectAll("circle")
-    .data(monthlyData)
+    .data(monthlyCountData)
     .join("circle")
     .attr("cx", (d, i) => x(i + 1))
     .attr("cy", (d) => y(d.num))
-    .attr("r", 2.5)
+    .attr("r", 4)
     .attr("fill", "#69b3a2")
-    .attr("transform", `translate(${7}, 0)`);
+    .attr("transform", `translate(${7}, 0)`)
+    .each(function(d, i) {
+      console.log("test")
+      console.log(this)
+      indexes.set(this, i);            // Store index in local variable.
+      epochs.set(this, d.epoch)
+    })
+    .on("mouseover", function(mouseEvent, d) { // Posts tooltip
+      let i = indexes.get(this)
+      console.log(posts_tooltip.locked)
+      // Unlocks tooltip
+      posts_tooltip.locked = false
+      // Shows post tooltip.
+      posts_tooltip
+        .style("left", localVars.get(x)(i + 1) + 5 + "px")
+        .style("top", localVars.get(y)(d.num) + 5 + "px")
+        .style("display", "inline-block")
+      d3.select('#posts_tooltip_text').text(d.num + " posts");
+      
+      let epoch_val = epochs.get(this)
+      // Bit of hard coding
+      for (let c = 0; c < 3; c++) {
+        const link = d3.select("#post_"+(c+1))
+        if (c < monthlyExampleData[epoch_val].length) {
+          link.text(monthlyExampleData[epoch_val][c][0])
+            .attr("href", monthlyExampleData[epoch_val][c][1]);
+        } else {
+          link.text("");
+        }
+      }
+    })
+    .on("mouseout", (mouseEvent, d) => {
+      if (!posts_tooltip.locked){
+        posts_tooltip.style("display", "none")
+      }
+    })
+    .on("mousedown", (mouseEvent, d) => {
+      posts_tooltip.locked = !posts_tooltip.locked
+    });
 }
 
 async function drawrapper() {
@@ -137,6 +185,7 @@ async function drawrapper() {
   const svg = d3.select("svg");
   const redditData = await d3.csv("./data/timestamped_post_count_data.csv");
   const covidData = await d3.csv("./data/Covid_data.csv");
+  const exampleData = await d3.json("./data/timestamped_example_post_data.json");
 
   const xForMonth = d3
     .scaleBand()
@@ -203,5 +252,5 @@ async function drawrapper() {
     .text("Number of COVID related post");
 
   drawBar(covidData, 0, xForMonth, yForCovid);
-  drawLine(redditData, 0, xForMonth, yForNum);
+  drawLine(redditData, exampleData, 0, xForMonth, yForNum);
 }
