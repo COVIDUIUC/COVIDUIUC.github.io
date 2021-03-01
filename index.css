@@ -27,14 +27,13 @@ path {
 }
 
 svg {
-  width: 80%;
-  height: 80%;
   margin: auto;
   display: block;
 }
 
 body {
   background-image: url("data/img/cool-background.png");
+  background-size: cover;
 }
 
 h1 {
